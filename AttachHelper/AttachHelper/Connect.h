@@ -72,7 +72,7 @@ namespace AttachHelper
 		DTE2 ^_applicationObject;
 		AddIn ^_addInInstance;
 		bool AddToolBar(_CommandBars ^ commandBarsOwner, String ^ToolBarName, CommandBar ^ %createdToolBar);
-		bool AddComboBox(CommandBar ^ ToolBarOwner, _CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle);
+		bool AddComboBox(CommandBar ^ ToolBarOwner, _CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle, String ^strComboBoxCaption);
 		bool FindProcess(int iPid, Process2 ^ stProces2);
 		bool AddButton(CommandBar ^ FloatingToolBarOwner);
 	};

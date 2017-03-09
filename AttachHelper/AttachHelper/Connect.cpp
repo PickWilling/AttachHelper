@@ -62,7 +62,8 @@ void AttachHelper::Connect::OnConnection(System::Object ^Application, ext_Connec
         {	
 			CommandBar ^attachHelperFloatingToolBar;
 			AddToolBar(commandBars, "AttachHelper", attachHelperFloatingToolBar);
-			if (ConnectMode != ext_ConnectMode::ext_cm_Startup)
+			
+			try
 			{
 				//将一个命令添加到 Commands 集合:
 				Command ^command = commands->AddNamedCommand2(_addInInstance, "AttachHelper", "AttachHelper", "Executes the command for AttachHelper", true, 59, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePictAndText, vsCommandControlType::vsCommandControlTypeButton);
@@ -78,12 +79,21 @@ void AttachHelper::Connect::OnConnection(System::Object ^Application, ext_Connec
 					commandDettachAll->AddControl(attachHelperFloatingToolBar, 1);
 				}
 			}
-			else
+			catch(Exception ^exceptioninfo)
+			{
+
+			}
+			String ^strComboBoxCaption = "AttachHelperComboBox";
+			try
+			{
+				attachHelperFloatingToolBar->Controls[strComboBoxCaption];
+			}
+			catch (...)
 			{
 				AddComboBox(attachHelperFloatingToolBar, 
-					gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle));
+					gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle), strComboBoxCaption);
 			}
-			
+	
         }
 		catch(System::ArgumentException ^argumentException)
         {
@@ -91,6 +101,10 @@ void AttachHelper::Connect::OnConnection(System::Object ^Application, ext_Connec
 			//  已存在。如果确实如此，则无需重新创建此命令，并且
             //  可以放心忽略此异常。
         }
+		catch(Exception ^exceptioninfo)
+		{
+
+		}
     }
 }
 
@@ -171,12 +185,15 @@ bool AttachHelper::Connect::AddToolBar(_CommandBars ^ commandBarsOwner, String ^
 	return true;
 }
 
-bool AttachHelper::Connect::AddComboBox(CommandBar ^ ToolBarOwner, _CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle)
+bool AttachHelper::Connect::AddComboBox(CommandBar ^ ToolBarOwner, 
+										_CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle,
+										String ^strComboBoxCaption)
 {
 	try
 	{
 		CommandBarControl ^ cmdBarCtrl = ToolBarOwner->Controls->Add(MsoControlType::msoControlComboBox, Missing::Value, Missing::Value, Missing::Value, false);
 		CommandBarComboBox ^ cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(cmdBarCtrl);
+		cmdBarComboBox->Caption = strComboBoxCaption;
 		cmdBarComboBox->DropDownLines = 6;
 		cmdBarComboBox->DropDownWidth = 100;
 		cmdBarComboBox->Visible = true;
