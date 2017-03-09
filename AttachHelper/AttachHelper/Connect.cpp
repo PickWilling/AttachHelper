@@ -78,7 +78,12 @@ void AttachHelper::Connect::OnConnection(System::Object ^Application, ext_Connec
 					commandDettachAll->AddControl(attachHelperFloatingToolBar, 1);
 				}
 			}
-			AddComboBox(attachHelperFloatingToolBar, gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle));
+			else
+			{
+				AddComboBox(attachHelperFloatingToolBar, 
+					gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle));
+			}
+			
         }
 		catch(System::ArgumentException ^argumentException)
         {
