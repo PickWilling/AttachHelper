@@ -139,6 +139,10 @@ void AttachHelper::Connect::Exec(String ^CmdName, vsCommandExecOption ExecuteOpt
 				{
 					stProces2->Attach();
 				}
+				else
+				{
+					MessageBox::Show("PID:" + strInput + " Not Found.");
+				}
 			}
 			else
 			{
@@ -207,11 +211,11 @@ bool AttachHelper::Connect::AddComboBox(CommandBar ^ ToolBarOwner,
 	return true;
 }
 
-bool AttachHelper::Connect::FindProcess(int iPid, Process2 ^ stProces2)
+bool AttachHelper::Connect::FindProcess(int iPid, Process2 ^ %stProces2)
 {
 	Debugger2 ^debug2 = dynamic_cast<Debugger2^>(_applicationObject->Debugger);
 	Processes ^stProcesses = dynamic_cast<Processes^>(debug2->LocalProcesses);
-	for (int iIndex = 1; iIndex < stProcesses->Count; ++iIndex)
+	for (int iIndex = 1; iIndex <= stProcesses->Count; ++iIndex)
 	{
 		if (iPid == stProcesses->Item(iIndex)->ProcessID)
 		{
@@ -235,7 +239,7 @@ System::Void AttachHelper::ComboBoxEventHandle(Microsoft::VisualStudio::CommandB
 	if (0 == strComboBoxSelectText->Length)
 	{
 		// 输入为空，无效事件，直接返回
-		return ;
+		return;
 	}
 
 	DTE2^ _applicationObject = dynamic_cast<DTE2^>(Ctrl->Application);
@@ -255,24 +259,24 @@ System::Void AttachHelper::ComboBoxEventHandle(Microsoft::VisualStudio::CommandB
 		try
 		{
 			_applicationObject->ExecuteCommand("AttachHelper.Connect.AttachPid", strComboBoxSelectText);
+			bool bFound = false;
+			for (int iIndex = 1; iIndex <= Ctrl->ListCount; ++iIndex)
+			{
+				if (strComboBoxSelectText == Ctrl->List[iIndex])
+				{
+					bFound = true;
+				}
+			}
+			// List中无此项
+			if (!bFound)
+			{
+				Ctrl->AddItem(strComboBoxSelectText, Missing::Value);
+			}
 		}
 		catch (Exception ^e)
 		{
 			MessageBox::Show(e->ToString());
 		}
-
-		bool bFound = false;
-		for (int iIndex = 0; iIndex < Ctrl->ListCount; ++iIndex)
-		{
-			if (strComboBoxSelectText == Ctrl->List[iIndex])
-			{
-				bFound = true;
-			}
-		}
-		// List中无此项
-		if (!bFound)
-		{
-			Ctrl->AddItem(strComboBoxSelectText, Missing::Value);
-		}
 	}
+	Ctrl->Text = ""; // 清空输入，避免误触发
 }
