@@ -72,9 +72,19 @@ namespace AttachHelper
 		DTE2 ^_applicationObject;
 		AddIn ^_addInInstance;
 		bool AddToolBar(_CommandBars ^ commandBarsOwner, String ^ToolBarName, CommandBar ^ %createdToolBar);
-		bool AddComboBox(CommandBar ^ ToolBarOwner, _CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle, String ^strComboBoxCaption);
+		bool AddComboBox(CommandBar ^ ToolBarOwner, CommandBarComboBox ^ %cmdBarComboBox);
 		bool FindProcess(int iPid, Process2 ^ %stProces2);
 		bool AddButton(CommandBar ^ FloatingToolBarOwner);
+		void SetUpUI();
+		CommandBar ^m_attachHelperFloatingToolBar;
+		CommandBarComboBox ^ m_cmdBarComboBox;
+		String ^ GetToolsMenuName();
+		void SetComboBoxProperty(CommandBarComboBox ^ cmdBarComboBox, String ^strComboBoxCaption,
+			_CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle);
+		void SetUiProperty();
+		void GetUiHandule();
+		static String ^m_strComboBoxCaption = "AttachHelperComboBox";
+		static String ^m_strToolBarName="AttachHelper";
 	};
 	// ComboBox 更改事件
 	Void ComboBoxEventHandle(Microsoft::VisualStudio::CommandBars::CommandBarComboBox^ Ctrl);

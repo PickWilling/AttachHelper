@@ -16,96 +16,14 @@ void AttachHelper::Connect::OnConnection(System::Object ^Application, ext_Connec
     _applicationObject = dynamic_cast<DTE2^>(Application);
     _addInInstance = dynamic_cast<AddIn^>(AddInInst);
 
-    if(ConnectMode == ext_ConnectMode::ext_cm_UISetup || ConnectMode == ext_ConnectMode::ext_cm_Startup)
+    if(ConnectMode == ext_ConnectMode::ext_cm_UISetup)
     {
-        array< Object^ >^ contextGUIDs = gcnew array< Object^ >(0);
-        Commands2 ^commands = dynamic_cast<Commands2^>(_applicationObject->Commands);
-        String ^toolsMenuName;
-
-        try
-        {
-            //若要将此命令移动到另一个菜单，则将“工具”一词更改为此菜单的英文版。
-            //  此代码将获取区域性，将其追加到菜单名中，然后将此命令添加到该菜单中。
-            //  您会在此文件中看到全部顶级菜单的列表
-            //  CommandBar.resx.
-            ResourceManager ^resourceManager = gcnew ResourceManager("AttachHelper.CommandBar", Assembly::GetExecutingAssembly());
-            CultureInfo ^cultureInfo = gcnew System::Globalization::CultureInfo(_applicationObject->LocaleID);
-			if(cultureInfo->TwoLetterISOLanguageName == "zh")
-			{
-				CultureInfo ^parentCultureInfo = cultureInfo->Parent;
-				toolsMenuName = resourceManager->GetString(String::Concat(parentCultureInfo->Name, "Tools"));
-			}
-			else
-			{
-				toolsMenuName = resourceManager->GetString(String::Concat(cultureInfo->TwoLetterISOLanguageName, "Tools"));
-			}
-        }
-        catch(...)
-        {
-            //我们试图查找“工具”一词的本地化版本，但未能找到。
-            //  默认值为 en-US 单词，该值可能适用于当前区域性。
-            toolsMenuName = "Tools";
-        }
-
-        //将此命令置于“工具”菜单上。
-        //查找 MenuBar 命令栏，该命令栏是容纳所有主菜单项的顶级命令栏:
-        _CommandBars ^commandBars = dynamic_cast<CommandBars^>(_applicationObject->CommandBars);
-        CommandBar ^menuBarCommandBar = dynamic_cast<CommandBar^>(commandBars["MenuBar"]);
-
-        //在 MenuBar 命令栏上查找“工具”命令栏:
-        CommandBarControl ^toolsControl = menuBarCommandBar->Controls[toolsMenuName];
-        CommandBarPopup ^toolsPopup = dynamic_cast<CommandBarPopup^>(toolsControl);
-
-        //如果希望添加多个由您的外接程序处理的命令，可以重复此 try/catch 块，
-        //  只需确保更新 QueryStatus/Exec 方法，使其包含新的命令名。
-        try
-        {	
-			CommandBar ^attachHelperFloatingToolBar;
-			AddToolBar(commandBars, "AttachHelper", attachHelperFloatingToolBar);
-			
-			try
-			{
-				//将一个命令添加到 Commands 集合:
-				Command ^command = commands->AddNamedCommand2(_addInInstance, "AttachHelper", "AttachHelper", "Executes the command for AttachHelper", true, 59, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePictAndText, vsCommandControlType::vsCommandControlTypeButton);
-				// 添加命令：附加进程， 入参: 进程的pid
-				Command ^commandAttachPid = commands->AddNamedCommand2(_addInInstance, "AttachPid", "AttachPid", "根据PID附加进程", true, 59, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePictAndText, vsCommandControlType::vsCommandControlTypeButton);
-				// 添加命令：分离所有进程
-				Command ^commandDettachAll = commands->AddNamedCommand2(_addInInstance, "DettachAll", "DettachAll", "分离所有进程", true, 60, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePict, vsCommandControlType::vsCommandControlTypeButton);
-
-
-				//将对应于该命令的控件添加到“新添加到浮动工具栏”:
-				if((commandDettachAll) && (attachHelperFloatingToolBar))
-				{
-					commandDettachAll->AddControl(attachHelperFloatingToolBar, 1);
-				}
-			}
-			catch(Exception ^exceptioninfo)
-			{
-
-			}
-			String ^strComboBoxCaption = "AttachHelperComboBox";
-			try
-			{
-				attachHelperFloatingToolBar->Controls[strComboBoxCaption];
-			}
-			catch (...)
-			{
-				AddComboBox(attachHelperFloatingToolBar, 
-					gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle), strComboBoxCaption);
-			}
-	
-        }
-		catch(System::ArgumentException ^argumentException)
-        {
-			//如果出现此异常，原因很可能是由于具有该名称的命令
-			//  已存在。如果确实如此，则无需重新创建此命令，并且
-            //  可以放心忽略此异常。
-        }
-		catch(Exception ^exceptioninfo)
-		{
-
-		}
+		SetUpUI();
     }
+	else if (ConnectMode == ext_ConnectMode::ext_cm_Startup)
+	{
+		SetUiProperty();
+	}
 }
 
 void AttachHelper::Connect::OnStartupComplete(System::Array ^%custom)
@@ -189,19 +107,13 @@ bool AttachHelper::Connect::AddToolBar(_CommandBars ^ commandBarsOwner, String ^
 	return true;
 }
 
-bool AttachHelper::Connect::AddComboBox(CommandBar ^ ToolBarOwner, 
-										_CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle,
-										String ^strComboBoxCaption)
+bool AttachHelper::Connect::AddComboBox(CommandBar ^ ToolBarOwner,
+										CommandBarComboBox ^ %cmdBarComboBox)
 {
 	try
 	{
 		CommandBarControl ^ cmdBarCtrl = ToolBarOwner->Controls->Add(MsoControlType::msoControlComboBox, Missing::Value, Missing::Value, Missing::Value, false);
-		CommandBarComboBox ^ cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(cmdBarCtrl);
-		cmdBarComboBox->Caption = strComboBoxCaption;
-		cmdBarComboBox->DropDownLines = 6;
-		cmdBarComboBox->DropDownWidth = 100;
-		cmdBarComboBox->Visible = true;
-		cmdBarComboBox->Change += eventHandle;
+		cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(cmdBarCtrl);
 	}
 	catch (Exception ^e)
 	{
@@ -230,6 +142,137 @@ bool AttachHelper::Connect::FindProcess(int iPid, Process2 ^ %stProces2)
 bool AttachHelper::Connect::AddButton(CommandBar ^ FloatingToolBarOwner)
 {
 	throw gcnew System::NotImplementedException();
+}
+
+System::String ^ AttachHelper::Connect::GetToolsMenuName()
+{
+	String ^toolsMenuName;
+	try
+	{
+		//若要将此命令移动到另一个菜单，则将“工具”一词更改为此菜单的英文版。
+		//  此代码将获取区域性，将其追加到菜单名中，然后将此命令添加到该菜单中。
+		//  您会在此文件中看到全部顶级菜单的列表
+		//  CommandBar.resx.
+		ResourceManager ^resourceManager = gcnew ResourceManager("AttachHelper.CommandBar", Assembly::GetExecutingAssembly());
+		CultureInfo ^cultureInfo = gcnew System::Globalization::CultureInfo(_applicationObject->LocaleID);
+		if(cultureInfo->TwoLetterISOLanguageName == "zh")
+		{
+			CultureInfo ^parentCultureInfo = cultureInfo->Parent;
+			toolsMenuName = resourceManager->GetString(String::Concat(parentCultureInfo->Name, "Tools"));
+		}
+		else
+		{
+			toolsMenuName = resourceManager->GetString(String::Concat(cultureInfo->TwoLetterISOLanguageName, "Tools"));
+		}
+	}
+	catch(...)
+	{
+		//我们试图查找“工具”一词的本地化版本，但未能找到。
+		//  默认值为 en-US 单词，该值可能适用于当前区域性。
+		toolsMenuName = "Tools";
+	}
+	return toolsMenuName;
+}
+
+void AttachHelper::Connect::GetUiHandule()
+{
+	_CommandBars ^commandBars = dynamic_cast<CommandBars^>(_applicationObject->CommandBars);
+	m_attachHelperFloatingToolBar = commandBars[m_strToolBarName];
+	m_cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(
+		m_attachHelperFloatingToolBar->Controls[m_strComboBoxCaption]);
+}
+
+void AttachHelper::Connect::SetUiProperty()
+{
+	GetUiHandule();
+	SetComboBoxProperty(m_cmdBarComboBox, m_strComboBoxCaption
+		, gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle));
+}
+
+void AttachHelper::Connect::SetComboBoxProperty(CommandBarComboBox ^ cmdBarComboBox, String ^strComboBoxCaption,
+						 _CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle)
+{
+	if (!cmdBarComboBox)
+	{
+		return ;
+	}
+	try
+	{
+		cmdBarComboBox->Caption = strComboBoxCaption;
+		cmdBarComboBox->DropDownLines = 6;
+		cmdBarComboBox->DropDownWidth = 100;
+		cmdBarComboBox->Visible = true;
+		cmdBarComboBox->Change += eventHandle;
+	}
+	catch (Exception ^e)
+	{
+		MessageBox::Show(e->ToString());
+	}
+
+}
+
+void AttachHelper::Connect::SetUpUI()
+{
+	array< Object^ >^ contextGUIDs = gcnew array< Object^ >(0);
+	Commands2 ^commands = dynamic_cast<Commands2^>(_applicationObject->Commands);
+	String ^toolsMenuName = GetToolsMenuName();
+	//将此命令置于“工具”菜单上。
+	//查找 MenuBar 命令栏，该命令栏是容纳所有主菜单项的顶级命令栏:
+	_CommandBars ^commandBars = dynamic_cast<CommandBars^>(_applicationObject->CommandBars);
+	CommandBar ^menuBarCommandBar = dynamic_cast<CommandBar^>(commandBars["MenuBar"]);
+
+	//在 MenuBar 命令栏上查找“工具”命令栏:
+	CommandBarControl ^toolsControl = menuBarCommandBar->Controls[toolsMenuName];
+	CommandBarPopup ^toolsPopup = dynamic_cast<CommandBarPopup^>(toolsControl);
+
+	//如果希望添加多个由您的外接程序处理的命令，可以重复此 try/catch 块，
+	//  只需确保更新 QueryStatus/Exec 方法，使其包含新的命令名。
+	try
+	{	
+		AddToolBar(commandBars, m_strToolBarName, m_attachHelperFloatingToolBar);
+
+		try
+		{
+			//将一个命令添加到 Commands 集合:
+			Command ^command = commands->AddNamedCommand2(_addInInstance, "AttachHelper", "AttachHelper", "Executes the command for AttachHelper", true, 59, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePictAndText, vsCommandControlType::vsCommandControlTypeButton);
+			// 添加命令：附加进程， 入参: 进程的pid
+			Command ^commandAttachPid = commands->AddNamedCommand2(_addInInstance, "AttachPid", "AttachPid", "根据PID附加进程", true, 59, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePictAndText, vsCommandControlType::vsCommandControlTypeButton);
+			// 添加命令：分离所有进程
+			Command ^commandDettachAll = commands->AddNamedCommand2(_addInInstance, "DettachAll", "DettachAll", "分离所有进程", true, 60, contextGUIDs, (int)vsCommandStatus::vsCommandStatusSupported+(int)vsCommandStatus::vsCommandStatusEnabled, (int)vsCommandStyle::vsCommandStylePict, vsCommandControlType::vsCommandControlTypeButton);
+
+
+			//将对应于该命令的控件添加到“新添加到浮动工具栏”:
+			if((commandDettachAll) && (m_attachHelperFloatingToolBar))
+			{
+				commandDettachAll->AddControl(m_attachHelperFloatingToolBar, 1);
+			}
+		}
+		catch(Exception ^exceptioninfo)
+		{
+
+		}
+		try
+		{
+			m_attachHelperFloatingToolBar->Controls[m_strComboBoxCaption];
+		}
+		catch (...)
+		{
+			AddComboBox(m_attachHelperFloatingToolBar, m_cmdBarComboBox);
+			SetComboBoxProperty(m_cmdBarComboBox, m_strComboBoxCaption
+				, gcnew _CommandBarComboBoxEvents_ChangeEventHandler(ComboBoxEventHandle));
+		}
+
+	}
+	catch(System::ArgumentException ^argumentException)
+	{
+		//如果出现此异常，原因很可能是由于具有该名称的命令
+		//  已存在。如果确实如此，则无需重新创建此命令，并且
+		//  可以放心忽略此异常。
+	}
+	catch(Exception ^exceptioninfo)
+	{
+
+	}
 }
 
 //
