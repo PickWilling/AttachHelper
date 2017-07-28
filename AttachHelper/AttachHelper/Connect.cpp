@@ -20,9 +20,17 @@ void AttachHelper::Connect::OnConnection(System::Object ^Application, ext_Connec
     {
 		SetUpUI();
     }
-	else if (ConnectMode == ext_ConnectMode::ext_cm_Startup)
+	else if (Extensibility::ext_ConnectMode::ext_cm_AfterStartup == ConnectMode)
 	{
 		SetUiProperty();
+	}
+	else if (ext_ConnectMode::ext_cm_Startup == ConnectMode)
+	{
+		SetUiProperty();
+	}
+	else
+	{
+		MessageBox::Show(String::Format("{0}", ConnectMode));
 	}
 }
 
@@ -112,7 +120,8 @@ bool AttachHelper::Connect::AddComboBox(CommandBar ^ ToolBarOwner,
 {
 	try
 	{
-		CommandBarControl ^ cmdBarCtrl = ToolBarOwner->Controls->Add(MsoControlType::msoControlComboBox, Missing::Value, Missing::Value, Missing::Value, false);
+		CommandBarControl ^ cmdBarCtrl = ToolBarOwner->Controls->Add(MsoControlType::msoControlComboBox
+			, Missing::Value, m_strComboBoxCaption, C_I_COMBOX_INDEX, false);
 		cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(cmdBarCtrl);
 	}
 	catch (Exception ^e)
@@ -176,10 +185,33 @@ System::String ^ AttachHelper::Connect::GetToolsMenuName()
 
 void AttachHelper::Connect::GetUiHandule()
 {
-	_CommandBars ^commandBars = dynamic_cast<CommandBars^>(_applicationObject->CommandBars);
-	m_attachHelperFloatingToolBar = commandBars[m_strToolBarName];
-	m_cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(
-		m_attachHelperFloatingToolBar->Controls[m_strComboBoxCaption]);
+	try
+	{
+		_CommandBars ^commandBars = dynamic_cast<CommandBars^>(_applicationObject->CommandBars);
+		m_attachHelperFloatingToolBar = commandBars[m_strToolBarName];
+		// 至少应该有两个控件
+		if (m_attachHelperFloatingToolBar->Controls->Count < 2)
+		{
+			AddComboBox(m_attachHelperFloatingToolBar, m_cmdBarComboBox);
+			
+			//CommandBarComboBox ^stTest2 = dynamic_cast<CommandBarComboBox ^>(
+			//	m_attachHelperFloatingToolBar->Controls[1]);
+		}
+		else
+		{
+			m_cmdBarComboBox = dynamic_cast<CommandBarComboBox ^>(
+				m_attachHelperFloatingToolBar->Controls[C_I_COMBOX_INDEX]);
+		/*	CommandBarComboBox ^ stCmBoxTest;
+			CommandBarComboBox ^ stTest2;
+			AddComboBox(m_attachHelperFloatingToolBar, stCmBoxTest);
+		*/	
+		}
+	}
+	catch (Exception ^e)
+	{
+		MessageBox::Show(e->ToString());
+	}
+	
 }
 
 void AttachHelper::Connect::SetUiProperty()

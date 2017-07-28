@@ -67,24 +67,29 @@ namespace AttachHelper
 		/// <param term='commandText'>neededText 参数所要求的文本。</param>
 		/// <seealso class='Exec' />
 		virtual void QueryStatus(String ^CmdName, vsCommandStatusTextWanted NeededText, vsCommandStatus %StatusOption, Object ^%CommandText);
-
-	private:
-		DTE2 ^_applicationObject;
-		AddIn ^_addInInstance;
-		bool AddToolBar(_CommandBars ^ commandBarsOwner, String ^ToolBarName, CommandBar ^ %createdToolBar);
-		bool AddComboBox(CommandBar ^ ToolBarOwner, CommandBarComboBox ^ %cmdBarComboBox);
-		bool FindProcess(int iPid, Process2 ^ %stProces2);
-		bool AddButton(CommandBar ^ FloatingToolBarOwner);
-		void SetUpUI();
-		CommandBar ^m_attachHelperFloatingToolBar;
-		CommandBarComboBox ^ m_cmdBarComboBox;
+	protected:
 		String ^ GetToolsMenuName();
 		void SetComboBoxProperty(CommandBarComboBox ^ cmdBarComboBox, String ^strComboBoxCaption,
 			_CommandBarComboBoxEvents_ChangeEventHandler ^eventHandle);
 		void SetUiProperty();
 		void GetUiHandule();
+		bool AddToolBar(_CommandBars ^ commandBarsOwner, String ^ToolBarName, CommandBar ^ %createdToolBar);
+		bool AddComboBox(CommandBar ^ ToolBarOwner, CommandBarComboBox ^ %cmdBarComboBox);
+		bool FindProcess(int iPid, Process2 ^ %stProces2);
+		bool AddButton(CommandBar ^ FloatingToolBarOwner);
+		void SetUpUI();
+
+	private:
+		DTE2 ^_applicationObject;
+		AddIn ^_addInInstance;
+		
+	private:
+		CommandBar ^m_attachHelperFloatingToolBar;
+		CommandBarComboBox ^ m_cmdBarComboBox;
 		static String ^m_strComboBoxCaption = "AttachHelperComboBox";
 		static String ^m_strToolBarName="AttachHelper";
+		// combox 的控件索引号
+		static int C_I_COMBOX_INDEX = 2;
 	};
 	// ComboBox 更改事件
 	Void ComboBoxEventHandle(Microsoft::VisualStudio::CommandBars::CommandBarComboBox^ Ctrl);
